@@ -1,17 +1,21 @@
 export type FastXMLParseResult = {
   "?xml": string;
   sitemapindex?: {
-    sitemap: {
-      loc: string;
-      lastmod?: string;
-    }[];
+    sitemap: SitemapIndexSitemap | SitemapIndexSitemap[];
   };
   urlset?: {
-    url: {
-      loc: string;
-      lastmod?: string;
-      changefreq: string;
-      priority: string;
-    }[];
+    url: UrlsetUrl | UrlsetUrl[];
   };
+};
+
+export type SitemapIndexSitemap = {
+  loc: string;
+  lastmod?: string;
+};
+
+type UrlsetUrl = {
+  loc: string;
+  lastmod?: string;
+  changefreq: string;
+  priority: string;
 };

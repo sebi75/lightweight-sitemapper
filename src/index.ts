@@ -2,8 +2,27 @@ import isGzip from "./lib/is-gzip";
 import { XMLParser } from "fast-xml-parser";
 import type { LightweightSitemapperOptions } from "./types/sitemapper";
 import * as zlib from "zlib";
-import type { FastXMLParseResult } from "./types/parse-result";
+import type {
+  FastXMLParseResult,
+  SitemapIndexSitemap,
+} from "./types/parse-result";
 import isNetworkError from "./lib/is-network-error";
+import { CustomError } from "./lib/custom-error";
+
+type LinkResultEntity = {
+  loc: string;
+  lastmod?: string;
+  error?: {
+    name: string;
+    message: string;
+    retries?: number;
+  };
+};
+
+type FetchSitemapResult = {
+  url: string;
+  links: LinkResultEntity[];
+};
 
 export class LightweightSitemapper {
   private fetchFunction: typeof fetch;
@@ -22,8 +41,36 @@ export class LightweightSitemapper {
     this.debug = options.debug ?? false;
   }
 
-  public async fetch(url: string, requestInitOptions?: RequestInit) {
-    return await this.crawl(url, requestInitOptions);
+  public async fetch(
+    url: string,
+    requestInitOptions?: RequestInit
+  ): Promise<FetchSitemapResult> {
+    let results: FetchSitemapResult = {
+      url: url,
+      links: [],
+    };
+
+    if (this.debug) {
+      console.log(
+        `Fetching sitemap from url: '${url}', with options: ${JSON.stringify({
+          timeout: this.timeout,
+          retries: this.retries,
+          debug: this.debug,
+          lastmod: this.lastmod,
+        })}`
+      );
+    }
+
+    try {
+      results.links = await this.crawl(url, requestInitOptions);
+    } catch (error) {
+      if (this.debug) {
+        console.error(`Failed to fetch sitemap from url: '${url}'`, error);
+      }
+      throw error;
+    }
+
+    return results;
   }
 
   /**
@@ -35,22 +82,8 @@ export class LightweightSitemapper {
   private async crawl(
     url: string,
     requestInitOptions?: RequestInit
-  ): Promise<{
-    links: {
-      loc: string;
-      lastmod?: string;
-      error?: Error;
-    }[];
-  }> {
-    const sitemapInitialResponseObject: {
-      links: {
-        loc: string;
-        lastmod?: string;
-        error?: Error;
-      }[];
-    } = {
-      links: [],
-    };
+  ): Promise<LinkResultEntity[]> {
+    let sitemapInitialResponseObject: LinkResultEntity[] = [];
     let retries = 0;
     let backoff = 2;
 
@@ -59,29 +92,58 @@ export class LightweightSitemapper {
       try {
         parsedResponse = await this.parse(url, requestInitOptions);
       } catch (error) {
+        const typedError = error as CustomError;
+        if (this.debug) {
+          console.error(
+            `Failed to fetch sitemap from url: '${url}', (Retry: ${
+              retries + 1
+            } / ${this.retries})`
+          );
+        }
         if (retries !== this.retries - 1) {
           retries++;
           await new Promise((resolve) => setTimeout(resolve, backoff * 1000));
           backoff *= 2;
         } else if (retries === this.retries - 1) {
-          throw new Error(`Failed to fetch sitemap from url: '${url}'`);
+          sitemapInitialResponseObject.push({
+            loc: url,
+            error: {
+              name: typedError.name,
+              message: typedError.message,
+              retries: retries,
+            },
+          });
+          return sitemapInitialResponseObject;
         }
       }
     }
 
     if (!parsedResponse) {
-      throw new Error(`Failed to fetch sitemap from url: '${url}'`);
+      if (this.debug) {
+        console.error(
+          `Unexpected error occured while fetching sitemap from url: '${url}'`
+        );
+      }
+      sitemapInitialResponseObject.push({
+        loc: url,
+        error: {
+          name: "UnexpectedError",
+          message: `Failed to fetch sitemap after ${this.retries} retries`,
+        },
+      });
+      return sitemapInitialResponseObject;
     }
 
-    // Now parsed response can either be a sitemapindex or a urlset.
-    // If it's a sitemapindex, we need to apply the above logic to fetch the sitemaps from the sitemapindex.
-    if (
-      parsedResponse.sitemapindex &&
-      parsedResponse.sitemapindex.sitemap &&
-      parsedResponse.sitemapindex.sitemap.length > 0
-    ) {
-      let sitemaps = parsedResponse.sitemapindex.sitemap;
-      // filter out sitemaps that are older than the lastmod date
+    if (parsedResponse.sitemapindex && parsedResponse.sitemapindex.sitemap) {
+      const sitemapsObject = parsedResponse.sitemapindex.sitemap;
+      let sitemaps: SitemapIndexSitemap[] = [];
+      if (sitemapsObject instanceof Array) {
+        sitemaps = sitemapsObject;
+      } else {
+        sitemaps = [sitemapsObject];
+      }
+
+      // Filter out sitemaps that are older than the lastmod date when specified
       if (this.lastmod) {
         sitemaps = sitemaps.filter((sitemap) => {
           if (sitemap.lastmod) {
@@ -95,6 +157,7 @@ export class LightweightSitemapper {
           }
         });
       }
+
       const crawlSitemapPromises = sitemaps.map((sitemap) => {
         return this.crawl(sitemap.loc, requestInitOptions);
       });
@@ -103,22 +166,28 @@ export class LightweightSitemapper {
       );
       crawlSitemapResults.forEach((result, index) => {
         if (result.status === "fulfilled") {
-          sitemapInitialResponseObject.links.push(...result.value.links);
+          sitemapInitialResponseObject.push(...result.value);
         } else {
-          sitemapInitialResponseObject.links.push({
+          // Should generally not happen, as this function never throws
+          sitemapInitialResponseObject.push({
             loc: sitemaps[index].loc,
-            error: result.reason,
+            error: {
+              name: "UnexpectedError",
+              message: `Unexpected error occurred while fetching sitemap: ${sitemaps[index].loc}`,
+            },
           });
         }
       });
 
       return sitemapInitialResponseObject;
-    } else if (
-      parsedResponse.urlset &&
-      parsedResponse.urlset.url &&
-      parsedResponse.urlset.url.length > 0
-    ) {
-      let unfilteredLinks = parsedResponse.urlset.url;
+    } else if (parsedResponse.urlset && parsedResponse.urlset.url) {
+      const urlObject = parsedResponse.urlset.url;
+      let unfilteredLinks: LinkResultEntity[] = [];
+      if (urlObject instanceof Array) {
+        unfilteredLinks = urlObject;
+      } else {
+        unfilteredLinks = [urlObject];
+      }
       if (this.lastmod) {
         unfilteredLinks = unfilteredLinks.filter((link) => {
           if (link.lastmod) {
@@ -128,7 +197,8 @@ export class LightweightSitemapper {
           }
         });
       }
-      sitemapInitialResponseObject.links = unfilteredLinks.map((link) => {
+
+      sitemapInitialResponseObject = unfilteredLinks.map((link) => {
         return {
           loc: link.loc,
           lastmod: link.lastmod,
@@ -137,9 +207,20 @@ export class LightweightSitemapper {
 
       return sitemapInitialResponseObject;
     } else {
-      throw new Error(
-        `Parsed response does not contain a sitemapindex or urlset for url: '${url}'`
-      );
+      if (this.debug) {
+        console.error(
+          `Parsed response does not contain a sitemapindex or urlset for url: '${url}'`,
+          parsedResponse
+        );
+      }
+      sitemapInitialResponseObject.push({
+        loc: url,
+        error: {
+          name: "InvalidSitemapError",
+          message: "Parsed response does not contain a sitemapindex or urlset",
+        },
+      });
+      return sitemapInitialResponseObject;
     }
   }
 
@@ -150,7 +231,7 @@ export class LightweightSitemapper {
         headers.set("User-Agent", this.defaultUserAgent);
       }
       if (!headers.has("Accept-Encoding")) {
-        headers.set("Accept-Encoding", "gzip");
+        headers.set("Accept-Encoding", "gzip,deflate,sdch");
       }
       if (!headers.has("Content-Type")) {
         headers.set("Content-Type", "application/xml");
@@ -194,19 +275,29 @@ export class LightweightSitemapper {
       return parseResult as FastXMLParseResult;
     } catch (error: any) {
       if (isNetworkError(error)) {
-        throw new Error(`Network error occurred: ${error.message}`);
+        throw new CustomError(
+          `Network error occurred: ${error.message}`,
+          "NetworkError"
+        );
       }
       if (error.name === "AbortError") {
-        throw new Error(
-          `Request timed out after ${this.timeout} milliseconds for url: '${url}'`
+        throw new CustomError(
+          `Request timed out after ${this.timeout} milliseconds for url: '${url}'`,
+          "TimeoutError"
         );
       }
 
       if (error.name === "HTTPError") {
-        throw new Error(`HTTP Error occurred: ${error.message}`);
+        throw new CustomError(
+          `HTTP Error occurred: ${error.message}`,
+          "HTTPError"
+        );
       }
 
-      throw new Error(`UNKNOWN error occurred: ${error.name}`);
+      throw new CustomError(
+        `Unknown error occurred: ${error.message}`,
+        "UnknownError"
+      );
     }
   }
 
