@@ -5,6 +5,8 @@
     "module": "ESNext",
     "moduleDetection": "force",
     "allowJs": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
