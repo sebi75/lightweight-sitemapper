@@ -1,16 +1,39 @@
 {
   "name": "lightweight-sitemapper",
-  "module": "./src/index.ts",
+  "version": "1.0.0",
+  "description": "A lightweight sitemap crawler for Node.js",
   "type": "module",
+  "license": "MIT",
+  "main": "./dist/index.ts",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "sandbox": "bun run ./src/sandbox.ts"
+    "sandbox": "rm -rf ./dist & bun run ./src/sandbox.ts",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.4.5"
   },
-  "dependencies": {
+  "peerDependencies": {
     "fast-xml-parser": "^4.3.6",
     "node-fetch": "^3.3.2"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "globals": {
+      "ts-jest": {
+        "diagnostics": false,
+        "isolatedModules": true
+      }
+    },
+    "verbose": false,
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/test/**/*.test.ts"
+    ]
   }
 }

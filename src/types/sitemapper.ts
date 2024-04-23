@@ -6,8 +6,17 @@ export type LightweightSitemapperOptions = {
   debug?: boolean;
 };
 
-export type LightweightSitemapperLinkEntity = {
+export type LinkResultEntity = {
+  loc: string;
+  lastmod?: string;
+  error?: {
+    name: string;
+    message: string;
+    retries?: number;
+  };
+};
+
+export type FetchSitemapResult = {
   url: string;
-  lastmod?: Date;
-  error?: Error;
+  links: LinkResultEntity[];
 };
