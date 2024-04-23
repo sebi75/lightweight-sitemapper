@@ -1,13 +1,14 @@
 import isGzip from "./lib/is-gzip";
 import { XMLParser } from "fast-xml-parser";
 import type { LightweightSitemapperOptions } from "./types/sitemapper";
-import fetch, { type RequestInit } from "node-fetch";
 import * as zlib from "zlib";
 import type { ParseResult } from "./types/parse-result";
 
 export class LightweightSitemapper {
+  private fetchFunction: typeof fetch;
   constructor(options: LightweightSitemapperOptions) {
-    // set the options here
+    this.fetchFunction =
+      typeof fetch !== "undefined" ? fetch : require("node-fetch");
   }
 
   public async fetch(url: string) {
@@ -17,7 +18,7 @@ export class LightweightSitemapper {
         "Accept-Encoding": "gzip",
       },
     };
-    const res = await fetch(url, requestOptions);
+    const res = await this.fetchFunction(url, requestOptions);
     if (!res.ok || !res.status.toString().startsWith("2")) {
       throw new Error(`Failed to fetch ${url}`);
     }
