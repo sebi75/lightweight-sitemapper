@@ -11,8 +11,8 @@
     "dist"
   ],
   "scripts": {
-    "sandbox": "rm -rf ./dist & bun run ./src/sandbox.ts",
-    "build": "tsc"
+    "sandbox": "bun run ./src/sandbox.ts",
+    "build": "rm -rf ./dist & tsc"
   },
   "devDependencies": {
     "@types/bun": "latest",
