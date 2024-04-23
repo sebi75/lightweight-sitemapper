@@ -1,9 +1,15 @@
-export type ParseResult = {
+export type FastXMLParseResult = {
   "?xml": string;
-  urlset: {
+  sitemapindex?: {
+    sitemap: {
+      loc: string;
+      lastmod?: string;
+    }[];
+  };
+  urlset?: {
     url: {
       loc: string;
-      lastmod: string;
+      lastmod?: string;
       changefreq: string;
       priority: string;
     }[];

@@ -3,11 +3,10 @@
   "module": "./src/index.ts",
   "type": "module",
   "scripts": {
-    "sandbox": "tsx ./src/sandbox.ts"
+    "sandbox": "bun run ./src/sandbox.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "tsx": "^4.7.2",
     "typescript": "^5.4.5"
   },
   "dependencies": {
