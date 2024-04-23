@@ -1,12 +1,17 @@
 {
   "name": "lightweight-sitemapper",
   "module": "./src/index.ts",
+  "type": "module",
+  "scripts": {
+    "sandbox": "tsx ./src/sandbox.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
+    "tsx": "^4.7.2",
     "typescript": "^5.4.5"
   },
-  "type": "module",
   "dependencies": {
-    "fast-xml-parser": "^4.3.6"
+    "fast-xml-parser": "^4.3.6",
+    "node-fetch": "^3.3.2"
   }
 }
