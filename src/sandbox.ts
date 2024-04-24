@@ -2,7 +2,7 @@
  * A file used for testing locally.
  * TODO: Find better way to do it and remove this.
  */
-import { LightweightSitemapper } from "./index";
+import LightweightSitemapper from "./index";
 
 const url_test = "https://www.nexxtsupport.com/sitemap.xml";
 const sitemapper = new LightweightSitemapper({

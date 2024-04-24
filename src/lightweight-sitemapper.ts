@@ -11,9 +11,9 @@ import type {
 } from "./types/parse-result";
 import isNetworkError from "./lib/is-network-error";
 import { CustomError } from "./lib/custom-error";
-const fastXmlParser = require("fast-xml-parser");
+import * as fastXmlParser from "fast-xml-parser";
 
-export class LightweightSitemapper {
+class LightweightSitemapper {
   private fetchFunction: typeof fetch;
   private readonly retries: number;
   private readonly timeout: number;
@@ -21,13 +21,13 @@ export class LightweightSitemapper {
   private readonly lastmod: Date | null;
   private readonly defaultUserAgent: string =
     "'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36";
-  constructor(options: LightweightSitemapperOptions) {
+  constructor(options?: LightweightSitemapperOptions) {
     this.fetchFunction =
       typeof fetch !== "undefined" ? fetch : require("node-fetch");
-    this.retries = options.retries ?? 3;
-    this.timeout = options.timeout ?? 10000; // 10 seconds
-    this.lastmod = options.lastmod ?? null;
-    this.debug = options.debug ?? false;
+    this.retries = options?.retries ?? 3;
+    this.timeout = options?.timeout ?? 10000; // 10 seconds
+    this.lastmod = options?.lastmod ?? null;
+    this.debug = options?.debug ?? false;
   }
 
   /**
@@ -309,3 +309,5 @@ export class LightweightSitemapper {
     });
   }
 }
+
+export default LightweightSitemapper;

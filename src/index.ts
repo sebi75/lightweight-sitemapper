@@ -9,6 +9,5 @@ export type {
   LinkResultEntity,
 };
 
-import { LightweightSitemapper } from "./lightweight-sitemapper";
-
+import LightweightSitemapper from "./lightweight-sitemapper";
 export default LightweightSitemapper;
