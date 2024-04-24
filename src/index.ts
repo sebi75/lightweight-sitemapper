@@ -11,4 +11,4 @@ export type {
 
 import { LightweightSitemapper } from "./lightweight-sitemapper";
 
-export { LightweightSitemapper };
+export default LightweightSitemapper;

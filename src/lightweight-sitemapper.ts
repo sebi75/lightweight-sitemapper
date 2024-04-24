@@ -1,5 +1,4 @@
 import isGzip from "./lib/is-gzip";
-import { XMLParser } from "fast-xml-parser";
 import type {
   LightweightSitemapperOptions,
   FetchSitemapResult,
@@ -12,6 +11,7 @@ import type {
 } from "./types/parse-result";
 import isNetworkError from "./lib/is-network-error";
 import { CustomError } from "./lib/custom-error";
+const fastXmlParser = require("fast-xml-parser");
 
 export class LightweightSitemapper {
   private fetchFunction: typeof fetch;
@@ -266,8 +266,8 @@ export class LightweightSitemapper {
         throw new Error(`Body is empty for url: '${url}'`);
       }
 
-      const fastXmlParser = new XMLParser();
-      const parseResult = fastXmlParser.parse(responseBody);
+      const parser = new fastXmlParser.XMLParser();
+      const parseResult = parser.parse(responseBody);
       return parseResult as FastXMLParseResult;
     } catch (error: any) {
       if (isNetworkError(error)) {
