@@ -1,6 +1,6 @@
 {
   "name": "lightweight-sitemapper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight sitemap crawler for Node.js",
   "type": "module",
   "license": "MIT",
