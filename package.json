@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "sandbox": "bun run ./src/sandbox.ts",
+    "test": "bun test --preload ./tests/setup.ts",
     "build": "rm -rf ./dist & rollup -c"
   },
   "devDependencies": {
@@ -27,19 +28,5 @@
   "peerDependencies": {
     "fast-xml-parser": "^4.3.6",
     "node-fetch": "^3.3.2"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "globals": {
-      "ts-jest": {
-        "diagnostics": false,
-        "isolatedModules": true
-      }
-    },
-    "verbose": false,
-    "testEnvironment": "node",
-    "testMatch": [
-      "<rootDir>/test/**/*.test.ts"
-    ]
   }
 }
