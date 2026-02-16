@@ -15,10 +15,10 @@ A lightweight TypeScript library for crawling and parsing XML sitemaps.
 ## Installation
 
 ```bash
-npm install lightweight-sitemapper fast-xml-parser node-fetch
+npm install lightweight-sitemapper
 ```
 
-`fast-xml-parser` and `node-fetch` are peer dependencies. If your runtime already provides a global `fetch` (Node 18+, Bun, Deno), `node-fetch` is not required.
+All dependencies are installed automatically. Native `fetch` is preferred at runtime; `node-fetch` is included as a fallback for older Node versions.
 
 ## Quick Start
 

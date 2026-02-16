@@ -1,6 +1,6 @@
 {
   "name": "lightweight-sitemapper",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A lightweight sitemap crawler for Node.js",
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
     "tslib": "^2.6.2",
     "typescript": "^5.4.5"
   },
-  "peerDependencies": {
+  "dependencies": {
     "fast-xml-parser": "^4.3.6",
     "node-fetch": "^3.3.2"
   },
